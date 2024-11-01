@@ -10,7 +10,7 @@ unsigned char*** getobjectarray() {
 
 	return objectarray;
 }
-unsigned char**  gethuman1() {
+unsigned char** gethuman1() {
 	unsigned char** human = (unsigned char**)malloc(sizeof(unsigned char*) * 9);
 	human[0] = (unsigned char*)malloc(sizeof(unsigned char) * 6);
 	human[0][0] = 0; human[0][1] = 5; human[0][2] = 6; human[0][3] = 3; human[0][4] = 5; human[0][5] = 255;
@@ -45,12 +45,13 @@ unsigned char**  getcords()      {
 unsigned char**  gethitboxes() {
 	unsigned char** hitbox = (unsigned char**)malloc(64 * sizeof(unsigned char*));
 	for (int i = 0; i < 64; i++) {
-		hitbox[i] = (unsigned char*)malloc(2 * sizeof(unsigned char));
-	}
-	for (int i = 0; i < 64; i++) {
+		hitbox[i] = (unsigned char*)malloc(4 * sizeof(unsigned char));
 		hitbox[i][0] = 255;
-		hitbox[i][0] = 255;
+		hitbox[i][1] = 255;
+		hitbox[i][2] = 255;
+		hitbox[i][3] = 255;
 	}
+	
 	return hitbox;
 }
 unsigned char*   getobjectprops() {
@@ -142,14 +143,16 @@ void addcords(unsigned char** cords, short curentpos, unsigned char x, unsigned 
 	cords[curentpos][0] = x;
 	cords[curentpos][1] = y;
 }
-void addhitboxes(unsigned char** hitboxes, short curentpos, unsigned char widht, unsigned char hight) {
-	hitboxes[curentpos][0] = widht;
-	hitboxes[curentpos][1] = hight;
+void addhitboxes(unsigned char** hitboxes, short curentpos, unsigned char pwidht, unsigned char widht, unsigned char phight, unsigned char hight) {
+	hitboxes[curentpos][0] = pwidht;
+	hitboxes[curentpos][1] = widht;
+	hitboxes[curentpos][2] = phight;
+	hitboxes[curentpos][3] = hight;
 }
-void addall(short curentpos, unsigned char*** objectarray, unsigned char** toadd, unsigned char** cords, unsigned char x, unsigned char y, unsigned char** hitboxes, unsigned char widht, unsigned char hight, unsigned char* objectprops, unsigned char props) {
+void addall(short curentpos, unsigned char*** objectarray, unsigned char** toadd, unsigned char** cords, unsigned char x, unsigned char y, unsigned char** hitboxes, unsigned char pwidht, unsigned char widht , unsigned char phight, unsigned char hight, unsigned char* objectprops, unsigned char props) {
 	addobjectarray(objectarray, toadd, curentpos);
 	addcords(cords, curentpos, x, y);
-	addhitboxes(hitboxes, curentpos, widht, hight);
+	addhitboxes(hitboxes, curentpos,pwidht, widht,phight, hight);
 	objectprops[curentpos] = props;
 }
 void movecords(unsigned char** cords, int x, int y, short von, short bis) {
@@ -171,23 +174,24 @@ void moveplayer(unsigned char** cords, unsigned char** hitboxes, int x, int y) {
 	}
 
 	for (int i = 1; i < lenght; i++) {
-		for (int j = 0; (j < hitboxes[0][0]) && (colision == 0);j++) {
-			if ((cords[0][0] -x+ j >= cords[i][0]) && (cords[0][0] -x + j <= cords[i][0] + (hitboxes[i][0]-1))) {
+		//printf("\nhitboxes[0][0]: %d\nhitboxes[0][1]: %d", hitboxes[0][0], hitboxes[0][1]);
+		for (int j = hitboxes[0][0]; (j < hitboxes[0][1]+ hitboxes[0][0]) && (colision == 0);j++) {
+			//std::cout <<"a\n";
+			if ((cords[0][0] -x+ j >= cords[i][0]) && (cords[0][0] -x + j <= cords[i][0] + (hitboxes[i][1]-1))) {
 				colision = 1;
 			}
 		}
 	}
 	if (colision == 1) {
 		check++;
+		colision = 0;
 	}
-
-	colision = 0;
 	for (int i = 1; i < lenght; i++) {
-		for (int j = 0; (j < hitboxes[0][1]) && (colision == 0); j++) {
-			if ((cords[0][1] -y + j >= cords[i][1]) && (cords[0][1] -y + j <= cords[i][1] + (hitboxes[i][1]-1))) {
+		for (int j = hitboxes[0][2]; (j < hitboxes[0][3]) && (colision == 0); j++) {
+			if ((cords[0][1] -y + j >= cords[i][1]) && (cords[0][1] -y + j <= cords[i][1] + (hitboxes[i][3]-1))) {
 				colision = 1;
-				//printf("\ny: %d\ncords[0][1]: %d\ncords[i][1]: %d\nj: %d\nhitboxes[i][1]: %d", y, cords[0][1], cords[i][1], j, hitboxes[i][1]);
-				//printf("\nx: %d\ncords[0][0]: %d\ncords[i][0]: %d\nj: %d\n hitboxes[i][0]: %d", x, cords[0][0], cords[i][0], j, hitboxes[i][0]);
+				//printf("\ny: %d\ncords[0][0]: %d\ncords[i][1]: %d\nj: %d\nhitboxes[i][3]: %d\nnhitboxes[i][2]: %d", y, cords[0][1], cords[i][1], j, hitboxes[i][3], hitboxes[i][2]);
+				//printf("\nx: %d\ncords[0][1]: %d\ncords[i][0]: %d\nj: %d\nhitboxes[i][1]: %d\nnhitboxes[i][0]: %d", x, cords[0][0], cords[i][0], j, hitboxes[i][1], hitboxes[i][0]);
 			}
 		}
 	}
@@ -197,6 +201,26 @@ void moveplayer(unsigned char** cords, unsigned char** hitboxes, int x, int y) {
 
 	if (check < 2) {
 		movecords(cords,x,y,0,1);
+	}
+}
+void fliphuman(unsigned char** human, unsigned char**hitboxes,unsigned char** cords, bool direction) {
+	unsigned char lenght = 0;
+	while (human[lenght] != nullptr) {
+		lenght++;
+	}
+	for (int i = 0; i < lenght/2; i++) {
+		human[lenght] = human[i];
+		human[i] = human[lenght-i-1];
+		human[lenght - i-1] = human[lenght];
+	}
+	human[lenght] = nullptr;
+	if (direction == 1) {
+		hitboxes[0][0] = 0;
+		cords[0][0] = cords[0][0] + 2;
+	}
+	else {
+		hitboxes[0][0] = 3;
+		cords[0][0] = cords[0][0] - 2;
 	}
 }
 int main() {
@@ -210,13 +234,13 @@ int main() {
 		box[i][2] = 255;
 	}
 	box[8] = nullptr;
-
+	bool direction = 0;
 	unsigned char*** objectarray = getobjectarray();
 	unsigned char**  cords = getcords();
 	unsigned char**  hitboxes = gethitboxes();
 	unsigned char*   objectprops = getobjectprops();
-	addall(0,objectarray, gethuman1(),cords,16,16,hitboxes,5,20, objectprops,0);
-	addall(1, objectarray, box, cords, 48, 48, hitboxes, 8, 8, objectprops,1);
+	addall(0,objectarray, gethuman1(),cords,16,16,hitboxes,0,5,0,20, objectprops,0);
+	addall(1, objectarray, box, cords, 48, 48, hitboxes,0, 8,0, 8, objectprops,1);
 	bg = drawall(objectarray, cords, bg);
 	
 	cimg_library::CImgDisplay dsp(128 * 8, 64 * 8, "1", 0);
@@ -225,9 +249,17 @@ int main() {
 		char storechar = 'b';
 		storechar = _getch();
 		if (storechar == 'a') {
+			if (direction == 1) {
+				fliphuman(objectarray[0],hitboxes,cords,direction);
+				direction = 0;
+			}
 			moveplayer(cords, hitboxes, -1, 0);
 		}
 		else if (storechar == 'd') {
+			if (direction == 0) {
+				fliphuman(objectarray[0],hitboxes ,cords, direction);
+				direction = 1;
+			}
 			moveplayer(cords, hitboxes, 1, 0);
 		}
 		else if (storechar == 'w') {
