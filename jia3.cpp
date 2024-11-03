@@ -2,7 +2,7 @@
 #include <iostream>
 #include <conio.h>
 #include <stdio.h>
-#include <cmath>
+
 unsigned char*** getobjectarray() {
 	unsigned char*** objectarray = (unsigned char***)malloc(64 * sizeof(unsigned char**));
 	for (int i = 0; i < 64; i++) {
@@ -194,6 +194,7 @@ bool checkmove(unsigned char** cords, unsigned char** hitboxes,unsigned char pos
 			check++;
 			colision = 0;
 		}
+		//std::cout << "a\n";
 		for (int j = hitboxes[pos][2]; (j < hitboxes[pos][3]+ hitboxes[pos][2]) && (colision == 0); j++) {
 			if ((cords[pos][1] + y + j >= cords[i][1]) && (cords[pos][1] + y + j <= cords[i][1] + (hitboxes[i][3] - 1))) {
 				colision = 1;
@@ -204,29 +205,58 @@ bool checkmove(unsigned char** cords, unsigned char** hitboxes,unsigned char pos
 			colision = 0;
 		}
 	}
+	
 	if (check != 2) {
 		return 0;
 	}
-	return 1;
+	if (check == 2) {
+		return 1;
+	}
 }
-void moveplayer(unsigned char** cords,char* velocity, unsigned char** hitboxes, int x, int y) {
-	bool check = 0;
-	velocity[1]++;
-	//printf("velocity[0]: %d\nvelocity[1]:%d\n", velocity[0], velocity[1]);
-	if (velocity[0] - velocity[1] > 0) {
-		if (checkmove(cords, hitboxes, 0, 0, 1) == 0) {
-			movecords(cords, 0, 1, 0, 1);
+void moveplayer(unsigned char** cords, char* velocity, unsigned char** hitboxes, int x, int y) {
+	int check = -1;
+	int tmp = ((-0.125 * velocity[1] * velocity[1] + velocity[0]) - (-0.125 * (velocity[1] - 1) * (velocity[1] - 1) + velocity[0]) / (velocity[1]-1 - velocity[1]));
+	//int tmp = -0.625 * (velocity[1]-1) * (velocity[1]-1) + velocity[0];
+	//printf("\nvelocity[1]: %d\ntmp: %d",velocity[1],tmp);
+	if((velocity[1] != 0)&&(tmp != 0)){
+		if (tmp > 0) {
+			for (int i = 1;( i <= tmp)&&(check == -1); i++) {
+				if (checkmove(cords, hitboxes, 0, 0, i) == 1) {
+					check = i;
+				}
+			}
+			if (check != -1) {
+				movecords(cords, 0, check - 1, 0, 1);
+				velocity[0] = 0;
+				velocity[1] = 0;
+			}
+			else {
+				movecords(cords, 0, tmp, 0, 1);
+				velocity[1]++;
+			}
 		}
+		if (tmp < 0) {
+			check = 1;
+			for (int i = 0; (i >= tmp)&&(check ==1); i--) {
+				if (checkmove(cords, hitboxes, 0, 0,i) == 1) {
+					check = i;
+				}
+			}
+			if (check != 1) {
+				movecords(cords, 0, check + 1, 0, 1);
+				velocity[0] = 0;
+				velocity[1] = 0;
+			}
+			else {
+				movecords(cords, 0, tmp, 0, 1);
+				velocity[1]++;
+			}
+		}	
 	}
 	else {
-		if (checkmove(cords, hitboxes, 0, 0, -1) == 1) {
-			velocity[0] = 0;
-			velocity[1] = 0;
-		}
-		else {
-			movecords(cords, 0,-1,0,1);
-		}
+		velocity[1]++;
 	}
+	
 	if (checkmove(cords,hitboxes,0,x,y) == 0) {
 		movecords(cords, x, y, 0, 1);
 	}
@@ -310,9 +340,12 @@ int main() {
 	char x = 0;
 	char y = 0;
 	addall(0,objectarray, gethuman1(),cords,16,16,hitboxes,0,5,0,20, objectprops,0);
-	addall(1, objectarray, getbox(8,8), cords, 48, 48, hitboxes, 0, 8, 0, 8, objectprops, 1);
+	addall(1, objectarray, getbox(8,8), cords, 48, 36, hitboxes, 0, 8, 0, 8, objectprops, 1);
 	addall(2,objectarray,getground(),cords,0,0,hitboxes,0,128,0,8,objectprops,2);
-	addall(3,objectarray,getbox(10,4),cords,100,12,hitboxes,0,10,0,4,objectprops,1);
+	addall(3,objectarray,getbox(10,4),cords,100,16,hitboxes,0,10,0,4,objectprops,1);
+	addall(4, objectarray, getbox(10, 4), cords, 85, 30, hitboxes, 0, 10, 0, 4, objectprops, 1);
+	addall(5, objectarray, getbox(5, 5), cords, 75, 42, hitboxes, 0, 4, 0, 4, objectprops, 1);
+	addall(6, objectarray, getbox(5, 5), cords, 65, 36, hitboxes, 0, 4, 0, 4, objectprops, 1);
 	bg = drawall(objectarray, cords, bg);
 	cimg_library::CImgDisplay dsp(128 * 8, 64 * 8, "1", 0);
 	dsp.display(bg);
@@ -343,7 +376,7 @@ int main() {
 		}*/
 		else if (storechar == ' ') {
 			if (checkmove(cords,hitboxes,0,0,-1) == 1) {
-				velocity[0] = 10;
+				velocity[0] = 3;
 				velocity[1] = 0;
 			}
 		}
