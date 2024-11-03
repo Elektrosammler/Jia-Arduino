@@ -3,14 +3,17 @@
 #include <conio.h>
 #include <stdio.h>
 
-unsigned char*** getobjectarray() {
+unsigned char*** getobjectarray() { // initialisirung für den array indem die Sprits gespeichert werden
+	//die sprits werden in einem jeweils zwei dimmensionallen array gespeichert welche in objectarray gespeichert werden.
+	//die erste dimmension ist die Y position im sprite 
+	//in der zweiten dimension wird zu erst ob ein pixelvorhanden ist oder nicht anngegeben dannach wird angegeben wie lange die serie der an bzw. ausen Pixel ist
 	unsigned char*** objectarray = (unsigned char***)malloc(64 * sizeof(unsigned char**));
 	for (int i = 0; i < 64; i++) {
 		objectarray[i] = nullptr;
 	}
 	return objectarray;
 }
-unsigned char**  gethuman1() {
+unsigned char**  gethuman1() { // sprite für den spielercharkter 
 	unsigned char** human = (unsigned char**)malloc(sizeof(unsigned char*) * 9);
 	human[0] = (unsigned char*)malloc(sizeof(unsigned char) * 6);
 	human[0][0] = 0; human[0][1] = 5; human[0][2] = 6; human[0][3] = 3; human[0][4] = 5; human[0][5] = 255;
@@ -31,7 +34,7 @@ unsigned char**  gethuman1() {
 	human[8] = nullptr;
 	return human;
 }
-unsigned char**  getground() {
+unsigned char**  getground() { // sprite für den boden
 	unsigned char** ground = (unsigned char**)malloc(129 * sizeof(unsigned char*));
 	for (int i = 0; i < 128; i++) {
 		ground[i] = (unsigned char*)malloc(3 * sizeof(unsigned char));
@@ -42,7 +45,7 @@ unsigned char**  getground() {
 	ground[128] = nullptr;
 	return ground;
 }
-unsigned char**  getbox(unsigned char widht, unsigned char hight) {
+unsigned char**  getbox(unsigned char widht, unsigned char hight) { // generiert box spriets für belibge länge und breite
 	unsigned char** box = (unsigned char**)malloc(sizeof(unsigned char*)*(widht+1));
 	for (int i = 0; i < widht; i++) {
 		box[i] = (unsigned char*)malloc(sizeof(unsigned char*) * 3);
@@ -53,7 +56,7 @@ unsigned char**  getbox(unsigned char widht, unsigned char hight) {
 	box[widht] = nullptr;
 	return box;
 }
-unsigned char**  getcords()      {
+unsigned char**  getcords()      { // intialsirung für den array in dem die Postion der Objekte gespeichert wird
 	unsigned char** cords = (unsigned char**)malloc(64 * sizeof(unsigned char*));
 	for (int i = 0; i < 64; i++) {
 		cords[i] = (unsigned char*)malloc(2 * sizeof(unsigned char));
@@ -64,26 +67,26 @@ unsigned char**  getcords()      {
 	}
 	return cords;
 } 
-unsigned char**  gethitboxes() {
+unsigned char**  gethitboxes() { // intialsirung für den array in dem die Hitboxen gespeichert werden
 	unsigned char** hitbox = (unsigned char**)malloc(64 * sizeof(unsigned char*));
 	for (int i = 0; i < 64; i++) {
 		hitbox[i] = (unsigned char*)malloc(4 * sizeof(unsigned char));
-		hitbox[i][0] = 255;
-		hitbox[i][1] = 255;
-		hitbox[i][2] = 255;
-		hitbox[i][3] = 255;
+		hitbox[i][0] = 255;//speichert die differnz zwischen cords position und beginn der Hitboxe auf der x achse
+		hitbox[i][1] = 255;//speichert x hitbox
+		hitbox[i][2] = 255;//speichert die differnz zwischen cords position und beginn der Hitboxe auf der y achse
+		hitbox[i][3] = 255;//speichert y hitbox
 	}
 	
 	return hitbox;
 }
-unsigned char*   getobjectprops() {
+unsigned char*   getobjectprops() { // intialiesiert einen array in dem die eigenschafften der objecte gespeichert wird macht bis jetzt nichts
 	unsigned char* objectprops = (unsigned char*)malloc(64 * sizeof(unsigned char));
 	for (int i = 0; i < 64; i++) {
 		objectprops[i] = 255;
 	}
 	return objectprops;
 }
-cimg_library::CImg <unsigned char> clear(cimg_library::CImg <unsigned char> bg) {
+cimg_library::CImg <unsigned char> clear(cimg_library::CImg <unsigned char> bg) {// alle pixel auf weiß
 	unsigned char white[] = { 254,254,254 };
 	for (int i = 0; i < 128; i++) {
 		for (int j = 0; j < 64; j++) {
@@ -93,7 +96,7 @@ cimg_library::CImg <unsigned char> clear(cimg_library::CImg <unsigned char> bg) 
 	}
 	return bg;
 }
-cimg_library::CImg <unsigned char> draw(unsigned char** object, int x, int y, cimg_library::CImg <unsigned char> bg) {
+cimg_library::CImg <unsigned char> draw(unsigned char** object, int x, int y, cimg_library::CImg <unsigned char> bg) { // lasst die pixel eines sprits an der richtigen position leuchten
 	const unsigned char zero[] = { 255,255,255 };
 	const unsigned char one[] = { 0,0,0 };
 	int j;
@@ -135,7 +138,7 @@ cimg_library::CImg <unsigned char> draw(unsigned char** object, int x, int y, ci
 	}
 	return bg;
 }
-cimg_library::CImg <unsigned char> drawall(unsigned char*** objectarray, unsigned char** cords, cimg_library::CImg <unsigned char> bg) {
+cimg_library::CImg <unsigned char> drawall(unsigned char*** objectarray, unsigned char** cords, cimg_library::CImg <unsigned char> bg) {/// stellt alle objecte da
 	bg = clear(bg);
 	short objectarraylenght = 0;
 	while (objectarray[objectarraylenght] != nullptr) {
@@ -147,26 +150,28 @@ cimg_library::CImg <unsigned char> drawall(unsigned char*** objectarray, unsigne
 	//bg.display();
 	return bg;
 }
-void addobjectarray(unsigned char*** objectarray, unsigned char** toadd, short curentpos) {
+void addobjectarray(unsigned char*** objectarray, unsigned char** toadd, short curentpos) { // fütgt ein neues elemnt zu objectarray hinzu
 	objectarray[curentpos] = toadd;
 }
-void addcords(unsigned char** cords, short curentpos, unsigned char x, unsigned char y) {
+void addcords(unsigned char** cords, short curentpos, unsigned char x, unsigned char y) { // fütgt ein neues elemnt zu cords hinzu
 	cords[curentpos][0] = x;
 	cords[curentpos][1] = y;
 }
-void addhitboxes(unsigned char** hitboxes, short curentpos, unsigned char pwidht, unsigned char widht, unsigned char phight, unsigned char hight) {
+void addhitboxes(unsigned char** hitboxes, short curentpos, unsigned char pwidht, unsigned char widht, unsigned char phight, unsigned char hight) { // fütgt ein neues elemnt zu hitboxes hinzu
 	hitboxes[curentpos][0] = pwidht;
 	hitboxes[curentpos][1] = widht;
 	hitboxes[curentpos][2] = phight;
 	hitboxes[curentpos][3] = hight;
 }
 void addall(short curentpos, unsigned char*** objectarray, unsigned char** toadd, unsigned char** cords, unsigned char x, unsigned char y, unsigned char** hitboxes, unsigned char pwidht, unsigned char widht , unsigned char phight, unsigned char hight, unsigned char* objectprops, unsigned char props) {
+	//funktion die zu objectarray, cords, hitboxes und objectprops ein element hinzufügt
 	addobjectarray(objectarray, toadd, curentpos);
 	addcords(cords, curentpos, x, y);
 	addhitboxes(hitboxes, curentpos,pwidht, widht,phight, hight);
 	objectprops[curentpos] = props;
 }
 void movecords(unsigned char** cords, int x, int y, short von, short bis) {
+	//beweg die cordinaten von einem oder mehreren elementen 
 	short cordslenght = 0;
 	while ((cords[cordslenght][0] != 255) && (cordslenght < 64)&& (cordslenght < bis)) {
 		cordslenght++;
@@ -177,6 +182,7 @@ void movecords(unsigned char** cords, int x, int y, short von, short bis) {
 	}
 }
 bool checkmove(unsigned char** cords, unsigned char** hitboxes,unsigned char pos, int x, int y) {
+	//überprüft ob ein ein großer schritt mit hitboxen passt 
 	int lenght = 1;
 	unsigned char check = 0;
 	bool colision = 0;
@@ -214,6 +220,7 @@ bool checkmove(unsigned char** cords, unsigned char** hitboxes,unsigned char pos
 	}
 }
 void moveplayer(unsigned char** cords, char* velocity, unsigned char** hitboxes, int x, int y) {
+	//macht physik und bewegt denn spieler
 	int check = -1;
 	int tmp = ((-0.125 * velocity[1] * velocity[1] + velocity[0]) - (-0.125 * (velocity[1] - 1) * (velocity[1] - 1) + velocity[0]) / (velocity[1]-1 - velocity[1]));
 	//int tmp = -0.625 * (velocity[1]-1) * (velocity[1]-1) + velocity[0];
@@ -262,6 +269,7 @@ void moveplayer(unsigned char** cords, char* velocity, unsigned char** hitboxes,
 	}
 }
 void fliphuman(unsigned char** human, unsigned char**hitboxes,unsigned char** cords, bool direction){
+	//dreht den sprite des Menschen und passt die Hitbox an
 	unsigned char lenght = 0;
 	while (human[lenght] != nullptr) {
 		lenght++;
@@ -282,6 +290,7 @@ void fliphuman(unsigned char** human, unsigned char**hitboxes,unsigned char** co
 	}
 }
 void freemost(unsigned char pos, unsigned char*** objectarray, unsigned char** cords, unsigned char** hitboxes) {
+	//macht etwas speicher frei
 	free(hitboxes[pos]);
 	free(cords[pos]);
 	for (int i = 0; objectarray[i] != nullptr; i++) {
@@ -290,6 +299,7 @@ void freemost(unsigned char pos, unsigned char*** objectarray, unsigned char** c
 	free(objectarray[pos]);
 }
 void freeall(unsigned char*** objectarray, unsigned char** cords, unsigned char** hitboxes, unsigned char* objectpops) {
+	//macht viel speicher frei
 	unsigned char lenght = 0;
 	while (objectpops[lenght] != 255) {
 		lenght++;
@@ -304,6 +314,7 @@ void freeall(unsigned char*** objectarray, unsigned char** cords, unsigned char*
 
 }
 void rremove(unsigned char pos, unsigned char*** objectarray, unsigned char** cords, unsigned char** hitboxes, unsigned char* objectpops) {
+	//loscht ein element aus den arrays
 	unsigned char lenght = 0;
 	unsigned char* ptrtmp;
 	while (objectarray[lenght] != nullptr) {
