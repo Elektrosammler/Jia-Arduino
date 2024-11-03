@@ -2,6 +2,10 @@
 #include <iostream>
 #include <conio.h>
 #include <stdio.h>
+#include <iostream>
+#include <thread>
+#include <chrono>
+
 
 unsigned char*** getobjectarray() { // initialisirung für den array indem die Sprits gespeichert werden
 	//die sprits werden in einem jeweils zwei dimmensionallen array gespeichert welche in objectarray gespeichert werden.
@@ -13,7 +17,7 @@ unsigned char*** getobjectarray() { // initialisirung für den array indem die S
 	}
 	return objectarray;
 }
-unsigned char**  gethuman1() { // sprite für den spielercharkter 
+unsigned char** gethuman1() { // sprite für den spielercharkter 
 	unsigned char** human = (unsigned char**)malloc(sizeof(unsigned char*) * 9);
 	human[0] = (unsigned char*)malloc(sizeof(unsigned char) * 6);
 	human[0][0] = 0; human[0][1] = 5; human[0][2] = 6; human[0][3] = 3; human[0][4] = 5; human[0][5] = 255;
@@ -34,7 +38,7 @@ unsigned char**  gethuman1() { // sprite für den spielercharkter
 	human[8] = nullptr;
 	return human;
 }
-unsigned char**  getground() { // sprite für den boden
+unsigned char** getground() { // sprite für den boden
 	unsigned char** ground = (unsigned char**)malloc(129 * sizeof(unsigned char*));
 	for (int i = 0; i < 128; i++) {
 		ground[i] = (unsigned char*)malloc(3 * sizeof(unsigned char));
@@ -45,8 +49,8 @@ unsigned char**  getground() { // sprite für den boden
 	ground[128] = nullptr;
 	return ground;
 }
-unsigned char**  getbox(unsigned char widht, unsigned char hight) { // generiert box spriets für belibge länge und breite
-	unsigned char** box = (unsigned char**)malloc(sizeof(unsigned char*)*(widht+1));
+unsigned char** getbox(unsigned char widht, unsigned char hight) { // generiert box spriets für belibge länge und breite
+	unsigned char** box = (unsigned char**)malloc(sizeof(unsigned char*) * (widht + 1));
 	for (int i = 0; i < widht; i++) {
 		box[i] = (unsigned char*)malloc(sizeof(unsigned char*) * 3);
 		box[i][0] = 1;
@@ -56,7 +60,7 @@ unsigned char**  getbox(unsigned char widht, unsigned char hight) { // generiert
 	box[widht] = nullptr;
 	return box;
 }
-unsigned char**  getcords()      { // intialsirung für den array in dem die Postion der Objekte gespeichert wird
+unsigned char** getcords() { // intialsirung für den array in dem die Postion der Objekte gespeichert wird
 	unsigned char** cords = (unsigned char**)malloc(64 * sizeof(unsigned char*));
 	for (int i = 0; i < 64; i++) {
 		cords[i] = (unsigned char*)malloc(2 * sizeof(unsigned char));
@@ -66,8 +70,8 @@ unsigned char**  getcords()      { // intialsirung für den array in dem die Pos
 		cords[i][0] = 255;//-32768;
 	}
 	return cords;
-} 
-unsigned char**  gethitboxes() { // intialsirung für den array in dem die Hitboxen gespeichert werden
+}
+unsigned char** gethitboxes() { // intialsirung für den array in dem die Hitboxen gespeichert werden
 	unsigned char** hitbox = (unsigned char**)malloc(64 * sizeof(unsigned char*));
 	for (int i = 0; i < 64; i++) {
 		hitbox[i] = (unsigned char*)malloc(4 * sizeof(unsigned char));
@@ -76,10 +80,10 @@ unsigned char**  gethitboxes() { // intialsirung für den array in dem die Hitbo
 		hitbox[i][2] = 255;//speichert die differnz zwischen cords position und beginn der Hitboxe auf der y achse
 		hitbox[i][3] = 255;//speichert y hitbox
 	}
-	
+
 	return hitbox;
 }
-unsigned char*   getobjectprops() { // intialiesiert einen array in dem die eigenschafften der objecte gespeichert wird macht bis jetzt nichts
+unsigned char* getobjectprops() { // intialiesiert einen array in dem die eigenschafften der objecte gespeichert wird macht bis jetzt nichts
 	unsigned char* objectprops = (unsigned char*)malloc(64 * sizeof(unsigned char));
 	for (int i = 0; i < 64; i++) {
 		objectprops[i] = 255;
@@ -163,17 +167,17 @@ void addhitboxes(unsigned char** hitboxes, short curentpos, unsigned char pwidht
 	hitboxes[curentpos][2] = phight;
 	hitboxes[curentpos][3] = hight;
 }
-void addall(short curentpos, unsigned char*** objectarray, unsigned char** toadd, unsigned char** cords, unsigned char x, unsigned char y, unsigned char** hitboxes, unsigned char pwidht, unsigned char widht , unsigned char phight, unsigned char hight, unsigned char* objectprops, unsigned char props) {
+void addall(short curentpos, unsigned char*** objectarray, unsigned char** toadd, unsigned char** cords, unsigned char x, unsigned char y, unsigned char** hitboxes, unsigned char pwidht, unsigned char widht, unsigned char phight, unsigned char hight, unsigned char* objectprops, unsigned char props) {
 	//funktion die zu objectarray, cords, hitboxes und objectprops ein element hinzufügt
 	addobjectarray(objectarray, toadd, curentpos);
 	addcords(cords, curentpos, x, y);
-	addhitboxes(hitboxes, curentpos,pwidht, widht,phight, hight);
+	addhitboxes(hitboxes, curentpos, pwidht, widht, phight, hight);
 	objectprops[curentpos] = props;
 }
 void movecords(unsigned char** cords, int x, int y, short von, short bis) {
 	//beweg die cordinaten von einem oder mehreren elementen 
 	short cordslenght = 0;
-	while ((cords[cordslenght][0] != 255) && (cordslenght < 64)&& (cordslenght < bis)) {
+	while ((cords[cordslenght][0] != 255) && (cordslenght < 64) && (cordslenght < bis)) {
 		cordslenght++;
 	}
 	for (int i = von; i < cordslenght; i++) {
@@ -181,7 +185,7 @@ void movecords(unsigned char** cords, int x, int y, short von, short bis) {
 		cords[i][1] = cords[i][1] + y;
 	}
 }
-bool checkmove(unsigned char** cords, unsigned char** hitboxes,unsigned char pos, int x, int y) {
+bool checkmove(unsigned char** cords, unsigned char** hitboxes, unsigned char pos, int x, int y) {
 	//überprüft ob ein ein großer schritt mit hitboxen passt 
 	int lenght = 1;
 	unsigned char check = 0;
@@ -201,7 +205,7 @@ bool checkmove(unsigned char** cords, unsigned char** hitboxes,unsigned char pos
 			colision = 0;
 		}
 		//std::cout << "a\n";
-		for (int j = hitboxes[pos][2]; (j < hitboxes[pos][3]+ hitboxes[pos][2]) && (colision == 0); j++) {
+		for (int j = hitboxes[pos][2]; (j < hitboxes[pos][3] + hitboxes[pos][2]) && (colision == 0); j++) {
 			if ((cords[pos][1] + y + j >= cords[i][1]) && (cords[pos][1] + y + j <= cords[i][1] + (hitboxes[i][3] - 1))) {
 				colision = 1;
 			}
@@ -211,7 +215,7 @@ bool checkmove(unsigned char** cords, unsigned char** hitboxes,unsigned char pos
 			colision = 0;
 		}
 	}
-	
+
 	if (check != 2) {
 		return 0;
 	}
@@ -222,12 +226,12 @@ bool checkmove(unsigned char** cords, unsigned char** hitboxes,unsigned char pos
 void moveplayer(unsigned char** cords, char* velocity, unsigned char** hitboxes, int x, int y) {
 	//macht physik und bewegt denn spieler
 	int check = -1;
-	int tmp = ((-0.125 * velocity[1] * velocity[1] + velocity[0]) - (-0.125 * (velocity[1] - 1) * (velocity[1] - 1) + velocity[0]) / (velocity[1]-1 - velocity[1]));
+	int tmp = ((-0.125 * velocity[1] * velocity[1] + velocity[0]) - (-0.125 * (velocity[1] - 1) * (velocity[1] - 1) + velocity[0]) / (velocity[1] - 1 - velocity[1]));
 	//int tmp = -0.625 * (velocity[1]-1) * (velocity[1]-1) + velocity[0];
 	//printf("\nvelocity[1]: %d\ntmp: %d",velocity[1],tmp);
-	if((velocity[1] != 0)&&(tmp != 0)){
+	if ((velocity[1] != 0) && (tmp != 0)) {
 		if (tmp > 0) {
-			for (int i = 1;( i <= tmp)&&(check == -1); i++) {
+			for (int i = 1; (i <= tmp) && (check == -1); i++) {
 				if (checkmove(cords, hitboxes, 0, 0, i) == 1) {
 					check = i;
 				}
@@ -244,8 +248,8 @@ void moveplayer(unsigned char** cords, char* velocity, unsigned char** hitboxes,
 		}
 		if (tmp < 0) {
 			check = 1;
-			for (int i = 0; (i >= tmp)&&(check ==1); i--) {
-				if (checkmove(cords, hitboxes, 0, 0,i) == 1) {
+			for (int i = 0; (i >= tmp) && (check == 1); i--) {
+				if (checkmove(cords, hitboxes, 0, 0, i) == 1) {
 					check = i;
 				}
 			}
@@ -258,26 +262,26 @@ void moveplayer(unsigned char** cords, char* velocity, unsigned char** hitboxes,
 				movecords(cords, 0, tmp, 0, 1);
 				velocity[1]++;
 			}
-		}	
+		}
 	}
 	else {
 		velocity[1]++;
 	}
-	
-	if (checkmove(cords,hitboxes,0,x,y) == 0) {
+
+	if (checkmove(cords, hitboxes, 0, x, y) == 0) {
 		movecords(cords, x, y, 0, 1);
 	}
 }
-void fliphuman(unsigned char** human, unsigned char**hitboxes,unsigned char** cords, bool direction){
+void fliphuman(unsigned char** human, unsigned char** hitboxes, unsigned char** cords, char direction) {
 	//dreht den sprite des Menschen und passt die Hitbox an
 	unsigned char lenght = 0;
 	while (human[lenght] != nullptr) {
 		lenght++;
 	}
-	for (int i = 0; i < lenght/2; i++) {
+	for (int i = 0; i < lenght / 2; i++) {
 		human[lenght] = human[i];
-		human[i] = human[lenght-i-1];
-		human[lenght - i-1] = human[lenght];
+		human[i] = human[lenght - i - 1];
+		human[lenght - i - 1] = human[lenght];
 	}
 	human[lenght] = nullptr;
 	if (direction == 1) {
@@ -340,20 +344,39 @@ void rremove(unsigned char pos, unsigned char*** objectarray, unsigned char** co
 	objectpops[pos] = objectpops[lenght - 1];
 	objectpops[lenght - 1] = 255;
 }
+char getstorechar() {
+	//nimmt input in einem 50ms zeitfenster
+	char storechar = '#';
+	std::thread t2([&]() {
+		std::thread t1([&]() {
+			storechar = _getch();
+			});
+		t1.detach();
+		
+		});
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	t2.detach();
+	
+	
+	return storechar;
+}
 int main() {
 	cimg_library::CImg <unsigned char> bg(128, 64, 1, 3, 0);
-	bool direction = 0;
+	char direction = -1;
 	unsigned char*** objectarray = getobjectarray();
-	unsigned char**  cords = getcords();
-	unsigned char**  hitboxes = gethitboxes();
-	unsigned char*   objectprops = getobjectprops();
-	char velocity[] = {0,0};
+	unsigned char** cords = getcords();
+	unsigned char** hitboxes = gethitboxes();
+	unsigned char* objectprops = getobjectprops();
+	char velocity[] = { 0,0 };
 	char x = 0;
 	char y = 0;
-	addall(0,objectarray, gethuman1(),cords,16,16,hitboxes,0,5,0,20, objectprops,0);
-	addall(1, objectarray, getbox(8,8), cords, 48, 36, hitboxes, 0, 8, 0, 8, objectprops, 1);
-	addall(2,objectarray,getground(),cords,0,0,hitboxes,0,128,0,8,objectprops,2);
-	addall(3,objectarray,getbox(10,4),cords,100,16,hitboxes,0,10,0,4,objectprops,1);
+	char storechar;
+	char directionair = 0;
+	unsigned char groundstreak = 0;
+	addall(0, objectarray, gethuman1(), cords, 16, 16, hitboxes, 0, 5, 0, 20, objectprops, 0);
+	addall(1, objectarray, getbox(8, 8), cords, 48, 36, hitboxes, 0, 8, 0, 8, objectprops, 1);
+	addall(2, objectarray, getground(), cords, 0, 0, hitboxes, 0, 128, 0, 8, objectprops, 2);
+	addall(3, objectarray, getbox(10, 4), cords, 100, 16, hitboxes, 0, 10, 0, 4, objectprops, 1);
 	addall(4, objectarray, getbox(10, 4), cords, 85, 30, hitboxes, 0, 10, 0, 4, objectprops, 1);
 	addall(5, objectarray, getbox(5, 5), cords, 75, 42, hitboxes, 0, 4, 0, 4, objectprops, 1);
 	addall(6, objectarray, getbox(5, 5), cords, 65, 36, hitboxes, 0, 4, 0, 4, objectprops, 1);
@@ -363,45 +386,64 @@ int main() {
 	while (!dsp.is_closed()) {
 		x = 0;
 		y = 0;
-		char storechar = 'b';
-		storechar = _getch();
-		if (storechar == 'a') {
+		
+		if (checkmove(cords, hitboxes, 0, 0, -1) == 1) {
+			groundstreak++;
+			if (groundstreak == 2) {
+				directionair = 0;
+				groundstreak = 0;
+			}
+		}
+		storechar = getstorechar();
+		//printf("%c\n", storechar);
+		//std::cout << storechar << "\n";
+		if ((storechar == 'a') || (directionair == -1)) {
 			if (direction == 1) {
-				fliphuman(objectarray[0],hitboxes,cords,direction);
-				direction = 0;
+				fliphuman(objectarray[0], hitboxes, cords, direction);
+				direction = -1;
+			}
+			if (directionair == 1) {
+				directionair = 0;
 			}
 			x = -1;
 		}
-		else if (storechar == 'd') {
-			if (direction == 0) {
-				fliphuman(objectarray[0],hitboxes ,cords, direction);
+		if ((storechar == 'd') || (directionair == 1)) {
+			if (direction == -1) {
+				fliphuman(objectarray[0], hitboxes, cords, direction);
 				direction = 1;
 			}
+			if (directionair == -1 ) {
+				directionair = 0;
+			}
 			x = 1;
+			if ((directionair == 1)) {
+				//printf("a");
+			}
 		}
-		/*else if (storechar == 'w') {
-			y = 1;
-		}
-		else if (storechar == 's') {
-			y = -1;
-		}*/
-		else if (storechar == ' ') {
-			if (checkmove(cords,hitboxes,0,0,-1) == 1) {
+		if (storechar == ' ') {
+			if (checkmove(cords, hitboxes, 0, 0, -1) == 1) {
 				velocity[0] = 3;
 				velocity[1] = 0;
 			}
+			groundstreak = 0;
+			
+			directionair = direction;
+			//printf("direction: %d", directionair);
 		}
 		else if (storechar == 'r') {
-			rremove(1,objectarray,cords,hitboxes,objectprops);
+			rremove(1, objectarray, cords, hitboxes, objectprops);
 		}
 		else if (storechar == 'e') {
-			freeall(objectarray,cords,hitboxes,objectprops);
+			freeall(objectarray, cords, hitboxes, objectprops);
 			return 0;
 		}
-		moveplayer(cords, velocity, hitboxes, x, y);
 		
+		moveplayer(cords, velocity, hitboxes, x, y);
+
 		bg = drawall(objectarray, cords, bg);
 		dsp.display(bg);
 	}
+	freeall(objectarray, cords, hitboxes, objectprops);
 	return 0;
+
 }
