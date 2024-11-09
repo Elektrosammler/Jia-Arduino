@@ -1,12 +1,458 @@
-void setup() {
-  // initialize digital pin LED_BUILTIN as an output.
-  pinMode(LED_BUILTIN, OUTPUT);
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+short g_bleft =  8;
+short g_bright =  9;
+short g_bjump = 10;
+Adafruit_SSD1306 display(128, 64, &Wire, -1);
+
+unsigned char*** getobjectarray() { // initialisirung für den array indem die Sprits gespeichert werden
+	//die sprits werden in einem jeweils zwei dimmensionallen array gespeichert welche in objectarray gespeichert werden.
+	//die erste dimmension ist die Y position im sprite 
+	//in der zweiten dimension wird zu erst ob ein pixelvorhanden ist oder nicht anngegeben dannach wird angegeben wie lange die serie der an bzw. ausen Pixel ist
+	unsigned char*** objectarray = (unsigned char***)malloc(64 * sizeof(unsigned char**));
+	for (int i = 0; i < 64; i++) {
+		objectarray[i] = nullptr;
+	}
+	return objectarray;
+}
+unsigned char** gethuman1() { // sprite für den spielercharkter 
+	unsigned char** human = (unsigned char**)malloc(sizeof(unsigned char*) * 9);
+	human[0] = (unsigned char*)malloc(sizeof(unsigned char) * 6);
+	human[0][0] = 0; human[0][1] = 5; human[0][2] = 6; human[0][3] = 3; human[0][4] = 5; human[0][5] = 255;
+	human[1] = (unsigned char*)malloc(sizeof(unsigned char) * 9);
+	human[1][0] = 1; human[1][1] = 5; human[1][2] = 6; human[1][3] = 1; human[1][4] = 1; human[1][5] = 1; human[1][6] = 4; human[1][7] = 2; human[1][8] = 255;
+	human[2] = (unsigned char*)malloc(sizeof(unsigned char) * 12);
+	human[2][0] = 0; human[2][1] = 4; human[2][2] = 1; human[2][3] = 1; human[2][4] = 4; human[2][5] = 1; human[2][6] = 2; human[2][7] = 3; human[2][8] = 1; human[2][9] = 1; human[2][10] = 2; human[2][11] = 255;
+	human[3] = (unsigned char*)malloc(sizeof(unsigned char) * 11);
+	human[3][0] = 1; human[3][1] = 5; human[3][2] = 5; human[3][3] = 1; human[3][4] = 1; human[3][5] = 1; human[3][6] = 1; human[3][7] = 1; human[3][8] = 2; human[3][9] = 3; human[3][10] = 255;
+	human[4] = (unsigned char*)malloc(sizeof(unsigned char) * 8);
+	human[4][0] = 0; human[4][1] = 5; human[4][2] = 5; human[4][3] = 3; human[4][4] = 4; human[4][5] = 1; human[4][6] = 2; human[4][7] = 255;
+	human[5] = (unsigned char*)malloc(sizeof(unsigned char) * 4);
+	human[5][0] = 0; human[5][1] = 18; human[5][2] = 2; human[5][3] = 255;
+	human[6] = (unsigned char*)malloc(sizeof(unsigned char) * 4);
+	human[6][0] = 0; human[6][1] = 18; human[6][2] = 2; human[6][3] = 255;
+	human[7] = (unsigned char*)malloc(sizeof(unsigned char) * 4);
+	human[7][0] = 0; human[7][1] = 18; human[7][2] = 2; human[7][3] = 255;
+	human[8] = nullptr;
+	return human;
+}
+unsigned char** getground() { // sprite für den boden
+	unsigned char** ground = (unsigned char**)malloc(129 * sizeof(unsigned char*));
+	for (int i = 0; i < 128; i++) {
+		ground[i] = (unsigned char*)malloc(3 * sizeof(unsigned char));
+		ground[i][0] = 1;
+		ground[i][1] = 8;
+		ground[i][2] = 255;
+	}
+	ground[128] = nullptr;
+	return ground;
+}
+unsigned char** getbox(unsigned char widht, unsigned char hight) { // generiert box spriets für belibge länge und breite
+	unsigned char** box = (unsigned char**)malloc(sizeof(unsigned char*) * (widht + 1));
+	for (int i = 0; i < widht; i++) {
+		box[i] = (unsigned char*)malloc(sizeof(unsigned char*) * 3);
+		box[i][0] = 1;
+		box[i][1] = hight;
+		box[i][2] = 255;
+	}
+	box[widht] = nullptr;
+	return box;
+}
+unsigned char** getcords() { // intialsirung für den array in dem die Postion der Objekte gespeichert wird
+	unsigned char** cords = (unsigned char**)malloc(64 * sizeof(unsigned char*));
+	for (int i = 0; i < 64; i++) {
+		cords[i] = (unsigned char*)malloc(2 * sizeof(unsigned char));
+	}
+	for (int i = 0; i < 64; i++) {
+		cords[i][0] = 255;
+		cords[i][0] = 255;//-32768;
+	}
+	return cords;
+}
+unsigned char** gethitboxes() { // intialsirung für den array in dem die Hitboxen gespeichert werden
+	unsigned char** hitbox = (unsigned char**)malloc(64 * sizeof(unsigned char*));
+	for (int i = 0; i < 64; i++) {
+		hitbox[i] = (unsigned char*)malloc(4 * sizeof(unsigned char));
+		hitbox[i][0] = 255;//speichert die differnz zwischen cords position und beginn der Hitboxe auf der x achse
+		hitbox[i][1] = 255;//speichert x hitbox
+		hitbox[i][2] = 255;//speichert die differnz zwischen cords position und beginn der Hitboxe auf der y achse
+		hitbox[i][3] = 255;//speichert y hitbox
+	}
+
+	return hitbox;
+}
+unsigned char* getobjectprops() { // intialiesiert einen array in dem die eigenschafften der objecte gespeichert wird macht bis jetzt nichts
+	unsigned char* objectprops = (unsigned char*)malloc(64 * sizeof(unsigned char));
+	for (int i = 0; i < 64; i++) {
+		objectprops[i] = 255;
+	}
+	return objectprops;
+}
+/*void clear() {// alle pixel auf weiß
+	unsigned char white[] = { 254,254,254 };
+	for (int i = 0; i < 128; i++) {
+		for (int j = 0; j < 64; j++) {
+
+			ssd1306_putPixel(1,1,0);
+		}
+	}
+
+}*/
+void draw(unsigned char** object, int x, int y) { // lasst die pixel eines sprits an der richtigen position leuchten
+	const unsigned char zero[] = { 255,255,255 };
+	const unsigned char one[] = { 0,0,0 };
+	int j;
+	bool value;
+	int posy = y;
+	int posx = x;
+	int inti;
+	for (int i = 0; object[i] != nullptr; i++) {
+		if (object[i][0] == 0) {
+			value = 0;
+		}
+		else {
+			value = 1;
+		}
+		j = 1;
+		posy = y;
+
+		while (object[i][j] != 255) {
+			inti = object[i][j];
+			if (value == 0) {
+				posy = posy + inti;
+
+			}
+			else {
+				for (int k = 0; k < inti; k++) {
+					display.drawPixel(127 - posx, 63 - posy,WHITE);
+					posy++;
+				}
+			}
+			if (value == 1) {
+				value = 0;
+			}
+			else {
+				value = 1;
+			}
+			j++;
+		}
+		posx = posx + 1;
+	}
+}
+void drawall(unsigned char*** objectarray, unsigned char** cords) {/// stellt alle objecte da
+  display.clearDisplay();
+	short objectarraylenght = 0;
+	while (objectarray[objectarraylenght] != nullptr) {
+		objectarraylenght++;
+	}
+	for (int i = 0; i < objectarraylenght; i++) {
+		 draw(objectarray[i], cords[i][0], cords[i][1]);
+	}
+}
+void addobjectarray(unsigned char*** objectarray, unsigned char** toadd, short curentpos) { // fütgt ein neues elemnt zu objectarray hinzu
+	objectarray[curentpos] = toadd;
+}
+void addcords(unsigned char** cords, short curentpos, unsigned char x, unsigned char y) { // fütgt ein neues elemnt zu cords hinzu
+	cords[curentpos][0] = x;
+	cords[curentpos][1] = y;
+}
+void addhitboxes(unsigned char** hitboxes, short curentpos, unsigned char pwidht, unsigned char widht, unsigned char phight, unsigned char hight) { // fütgt ein neues elemnt zu hitboxes hinzu
+	hitboxes[curentpos][0] = pwidht;
+	hitboxes[curentpos][1] = widht;
+	hitboxes[curentpos][2] = phight;
+	hitboxes[curentpos][3] = hight;
+}
+void addall(short curentpos, unsigned char*** objectarray, unsigned char** toadd, unsigned char** cords, unsigned char x, unsigned char y, unsigned char** hitboxes, unsigned char pwidht, unsigned char widht, unsigned char phight, unsigned char hight, unsigned char* objectprops, unsigned char props) {
+	//funktion die zu objectarray, cords, hitboxes und objectprops ein element hinzufügt
+	addobjectarray(objectarray, toadd, curentpos);
+	addcords(cords, curentpos, x, y);
+	addhitboxes(hitboxes, curentpos, pwidht, widht, phight, hight);
+	objectprops[curentpos] = props;
+}
+void movecords(unsigned char** cords, int x, int y, short von, short bis) {
+	//beweg die cordinaten von einem oder mehreren elementen 
+	short cordslenght = 0;
+	while ((cords[cordslenght][0] != 255) && (cordslenght < 64) && (cordslenght < bis)) {
+		cordslenght++;
+	}
+	for (int i = von; i < cordslenght; i++) {
+		cords[i][0] = cords[i][0] - x;
+		cords[i][1] = cords[i][1] + y;
+	}
+}
+bool checkmove(unsigned char** cords, unsigned char** hitboxes, unsigned char pos, int x, int y) {
+	//überprüft ob ein ein großer schritt mit hitboxen passt 
+	int lenght = 1;
+	unsigned char check = 0;
+	bool colision = 0;
+	while (cords[lenght][0] != 255) {
+		lenght++;
+	}
+	for (int i = 1; (i < lenght) && (check != 2); i++) {
+		check = 0;
+		for (int j = hitboxes[pos][0]; (j < hitboxes[pos][1] + hitboxes[pos][0]) && (colision == 0); j++) {
+			if ((cords[pos][0] - x + j >= cords[i][0]) && (cords[pos][0] - x + j <= cords[i][0] + (hitboxes[i][1] - 1))) {
+				colision = 1;
+			}
+		}
+		if (colision == 1) {
+			check++;
+			colision = 0;
+		}
+		//std::cout << "a\n";
+		for (int j = hitboxes[pos][2]; (j < hitboxes[pos][3] + hitboxes[pos][2]) && (colision == 0); j++) {
+			if ((cords[pos][1] + y + j >= cords[i][1]) && (cords[pos][1] + y + j <= cords[i][1] + (hitboxes[i][3] - 1))) {
+				colision = 1;
+			}
+		}
+		if (colision == 1) {
+			check++;
+			colision = 0;
+		}
+	}
+
+	if (check != 2) {
+		return 0;
+	}
+	if (check == 2) {
+		return 1;
+	}
+}
+void moveplayer(unsigned char** cords, char* velocity, unsigned char** hitboxes, int x, int y) {
+	//macht physik und bewegt denn spieler
+	int check = -1;
+	int tmp = ((-0.125 * velocity[1] * velocity[1] + velocity[0]) - (-0.125 * (velocity[1] - 1) * (velocity[1] - 1) + velocity[0]) / (velocity[1] - 1 - velocity[1]));
+	//int tmp = -0.625 * (velocity[1]-1) * (velocity[1]-1) + velocity[0];
+	//printf("\nvelocity[1]: %d\ntmp: %d",velocity[1],tmp);
+	if ((velocity[1] != 0) && (tmp != 0)) {
+		if (tmp > 0) {
+			for (int i = 1; (i <= tmp) && (check == -1); i++) {
+				if (checkmove(cords, hitboxes, 0, 0, i) == 1) {
+					check = i;
+				}
+			}
+			if (check != -1) {
+				movecords(cords, 0, check - 1, 0, 1);
+				velocity[0] = 0;
+				velocity[1] = 0;
+			}
+			else {
+				movecords(cords, 0, tmp, 0, 1);
+				velocity[1]++;
+			}
+		}
+		if (tmp < 0) {
+			check = 1;
+			for (int i = 0; (i >= tmp) && (check == 1); i--) {
+				if (checkmove(cords, hitboxes, 0, 0, i) == 1) {
+					check = i;
+				}
+			}
+			if (check != 1) {
+				movecords(cords, 0, check + 1, 0, 1);
+				velocity[0] = 0;
+				velocity[1] = 0;
+			}
+			else {
+				movecords(cords, 0, tmp, 0, 1);
+				velocity[1]++;
+			}
+		}
+	}
+	else {
+		velocity[1]++;
+	}
+
+	if (checkmove(cords, hitboxes, 0, x, y) == 0) {
+		movecords(cords, x, y, 0, 1);
+	}
+}
+void fliphuman(unsigned char** human, unsigned char** hitboxes, unsigned char** cords, char direction) {
+	//dreht den sprite des Menschen und passt die Hitbox an
+	unsigned char lenght = 0;
+	while (human[lenght] != nullptr) {
+		lenght++;
+	}
+	for (int i = 0; i < lenght / 2; i++) {
+		human[lenght] = human[i];
+		human[i] = human[lenght - i - 1];
+		human[lenght - i - 1] = human[lenght];
+	}
+	human[lenght] = nullptr;
+	if (direction == 1) {
+		hitboxes[0][0] = 0;
+		cords[0][0] = cords[0][0] + 2;
+	}
+	else {
+		hitboxes[0][0] = 3;
+		cords[0][0] = cords[0][0] - 2;
+	}
+}
+void freemost(unsigned char pos, unsigned char*** objectarray, unsigned char** cords, unsigned char** hitboxes) {
+	//macht etwas speicher frei
+	free(hitboxes[pos]);
+	free(cords[pos]);
+	for (int i = 0; objectarray[i] != nullptr; i++) {
+		free(objectarray[pos][i]);
+	}
+	free(objectarray[pos]);
+}
+void freeall(unsigned char*** objectarray, unsigned char** cords, unsigned char** hitboxes, unsigned char* objectpops) {
+	//macht viel speicher frei
+	unsigned char lenght = 0;
+	while (objectpops[lenght] != 255) {
+		lenght++;
+	}
+	for (int i = 0; i < lenght; i++) {
+		freemost(i, objectarray, cords, hitboxes);
+	}
+	free(objectarray);
+	free(cords);
+	free(hitboxes);
+	free(objectpops);
+
+}
+void rremove(unsigned char pos, unsigned char*** objectarray, unsigned char** cords, unsigned char** hitboxes, unsigned char* objectpops) {
+	//loscht ein element aus den arrays
+	unsigned char lenght = 0;
+	unsigned char* ptrtmp;
+	while (objectarray[lenght] != nullptr) {
+		lenght++;
+	}
+	for (int i = 0; objectarray[i] != nullptr; i++) {
+		free(objectarray[pos][i]);
+	}
+	objectarray[pos] = objectarray[lenght - 1];
+	objectarray[lenght - 1] = nullptr;
+	ptrtmp = cords[pos];
+	cords[pos] = cords[lenght - 1];
+	cords[lenght - 1] = ptrtmp;
+	cords[lenght - 1][0] = 255;
+	cords[lenght - 1][1] = 255;
+	ptrtmp = hitboxes[pos];
+	hitboxes[pos] = hitboxes[lenght - 1];
+	hitboxes[lenght - 1] = ptrtmp;
+	hitboxes[lenght - 1][0] = 255;
+	hitboxes[lenght - 1][1] = 255;
+	hitboxes[lenght - 1][2] = 255;
+	hitboxes[lenght - 1][3] = 255;
+	objectpops[pos] = objectpops[lenght - 1];
+	objectpops[lenght - 1] = 255;
 }
 
-// the loop function runs over and over again forever
+char getstorechar() {//nimmt input 
+  char storechar = 0;
+  if(digitalRead(g_bleft)== 1){
+    storechar--;
+  }
+  if(digitalRead(g_bright)== 1){
+    storechar++;
+  }
+  
+  return storechar;
+
+}
+bool jump(){
+  if(digitalRead(g_bjump) == 1){
+    return 1;
+  }
+  else{
+    return 0;
+  }
+}
+void settingup(){
+  
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3c);
+  display.display();
+  pinMode(g_bleft,INPUT);
+  pinMode(g_bright,INPUT);
+  pinMode(g_bjump,INPUT);
+}
+void setup() {
+  settingup();
+  Serial.begin(2000000);
+  //Serial.println("1");
+	char direction = -1;
+	unsigned char*** objectarray = getobjectarray();
+  //Serial.println("1.1");
+	unsigned char** cords = getcords();
+	unsigned char** hitboxes = gethitboxes();
+	unsigned char* objectprops = getobjectprops();
+  //Serial.println("1.5");
+	char velocity[] = { 0,0 };
+	char x = 0;
+	char y = 0;
+	char storechar;
+	unsigned char groundstreak = 0;
+  //Serial.println("1.6");
+	addall(0, objectarray, gethuman1(), cords, 16, 16, hitboxes, 0, 5, 0, 20, objectprops, 0);
+  //Serial.println("1.71");
+	addall(1, objectarray, getbox(8, 8), cords, 48, 36, hitboxes, 0, 8, 0, 8, objectprops, 1);
+  //Serial.println("1.72");
+	addall(2, objectarray, getground(), cords, 0, 0, hitboxes, 0, 128, 0, 8, objectprops, 2);
+  //Serial.println("1.73");
+	addall(3, objectarray, getbox(10, 4), cords, 100, 16, hitboxes, 0, 10, 0, 4, objectprops, 1);
+  //Serial.println("1.74");
+	addall(4, objectarray, getbox(10, 4), cords, 85, 30, hitboxes, 0, 10, 0, 4, objectprops, 1);
+  //Serial.println("1.75");
+	addall(5, objectarray, getbox(5, 5), cords, 75, 42, hitboxes, 0, 4, 0, 4, objectprops, 1);
+  //Serial.println("1.76");
+	addall(6, objectarray, getbox(5, 5), cords, 65, 36, hitboxes, 0, 4, 0, 4, objectprops, 1);
+  Serial.println("pre drawall");
+	drawall(objectarray, cords);
+  Serial.println("2");
+
+	while (true) {
+		x = 0;
+		y = 0;
+		
+		if (checkmove(cords, hitboxes, 0, 0, -1) == 1) {
+			groundstreak++;
+			if (groundstreak == 2) {
+				groundstreak = 0;
+			}
+		}
+		storechar = getstorechar();
+		//printf("%c\n", storechar);
+		//std::cout << storechar << "\n";
+		if ((storechar == -1)) {
+			if (direction == 1) {
+				fliphuman(objectarray[0], hitboxes, cords, direction);
+				direction = -1;
+			}
+			x = -1;
+		}
+		else if ((storechar == 1)) {
+			if (direction == -1) {
+				fliphuman(objectarray[0], hitboxes, cords, direction);
+				direction = 1;
+			}
+			
+			x = 1;
+			
+		}
+		if (jump()) {
+			if (checkmove(cords, hitboxes, 0, 0, -1) == 1) {
+				velocity[0] = 3;
+				velocity[1] = 0;
+			}
+			groundstreak = 0;
+		}
+		
+		
+		moveplayer(cords, velocity, hitboxes, x, y);
+
+		drawall(objectarray, cords);
+    display.display();
+    Serial.println();
+    //delay(60000);
+	}
+	freeall(objectarray, cords, hitboxes, objectprops);
+	return 0;
+
+}
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
-  delay(1000);                      // wait for a second
-  digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
-  delay(1000);                      // wait for a second
+
 }
